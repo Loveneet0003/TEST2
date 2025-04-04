@@ -4,10 +4,46 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const { Connection, PublicKey, Keypair, Transaction, SystemProgram } = require('@solana/web3.js');
 const crypto = require('crypto');
+const WebSocket = require('ws');
 
 // Initialize Express app
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Initialize WebSocket server
+const wss = new WebSocket.Server({ port: 3001 });
+
+// WebSocket connections store
+const clients = new Set();
+
+// Broadcast vote updates to all connected clients
+function broadcastVoteUpdate() {
+    const voteData = JSON.stringify({
+        type: 'voteUpdate',
+        data: db.voteResults
+    });
+    
+    clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(voteData);
+        }
+    });
+}
+
+// WebSocket connection handler
+wss.on('connection', (ws) => {
+    clients.add(ws);
+    
+    // Send initial vote counts
+    ws.send(JSON.stringify({
+        type: 'voteUpdate',
+        data: db.voteResults
+    }));
+    
+    ws.on('close', () => {
+        clients.delete(ws);
+    });
+});
 
 // Middleware
 app.use(cors());
@@ -184,6 +220,9 @@ app.post('/api/vote', async (req, res) => {
             // Update vote count (for admin reporting)
             db.voteResults[candidate]++;
             
+            // Broadcast the update to all connected clients
+            broadcastVoteUpdate();
+            
             res.json({ 
                 success: true, 
                 message: 'Vote cast successfully.',
@@ -235,6 +274,14 @@ app.get('/api/check-voted/:email', (req, res) => {
 // Health check endpoint
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date() });
+});
+
+// Add new endpoint to get current vote counts
+app.get('/api/vote-counts', (req, res) => {
+    res.json({
+        success: true,
+        data: db.voteResults
+    });
 });
 
 // Start the server
