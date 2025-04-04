@@ -3,9 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const { Connection, PublicKey, Keypair, Transaction, SystemProgram } = require('@solana/web3.js');
-const { TOKEN_PROGRAM_ID, Token } = require('@solana/spl-token');
 const crypto = require('crypto');
-const twilio = require('twilio');
 
 // Initialize Express app
 const app = express();
@@ -17,8 +15,6 @@ app.use(bodyParser.json());
 
 // Database mock (in a real app, you would use a proper database)
 const db = {
-    // Store OTPs with expiry time
-    otps: {},
     // Store voted users to prevent duplicate votes
     votedUsers: new Set(),
     // Store vote counts (for admin reporting)
@@ -30,10 +26,6 @@ const db = {
         "Eve": 0
     }
 };
-
-// Initialize Twilio client (replace with your credentials)
-// const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-// const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
 
 // Initialize Solana connection
 const solanaConnection = new Connection(
@@ -66,116 +58,56 @@ const VOTING_PROGRAM_ID = new PublicKey(
     process.env.VOTING_PROGRAM_ID || '11111111111111111111111111111111' // Placeholder
 );
 
-// Generate and send OTP
-app.post('/api/auth/send-otp', async (req, res) => {
+// Validate college email
+function validateCollegeEmail(email) {
+    // Check basic email format
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return false;
+    }
+    
+    // Check for college domain (customize this for your college)
+    // This could check for .edu domains or specific college domains
+    return email.endsWith('.edu') || email.includes('college.edu');
+}
+
+// Authenticate with college email
+app.post('/api/auth/email', async (req, res) => {
     try {
-        const { phone } = req.body;
+        const { email } = req.body;
         
-        if (!phone || !/^\d{10}$/.test(phone)) {
+        if (!email || !validateCollegeEmail(email)) {
             return res.status(400).json({ 
                 success: false, 
-                message: 'Invalid phone number format. Please provide a 10-digit number.' 
+                message: 'Invalid email format. Please provide a valid college email address.' 
             });
         }
         
         // Check if user has already voted
-        if (db.votedUsers.has(phone)) {
+        if (db.votedUsers.has(email)) {
             return res.status(403).json({ 
                 success: false, 
                 message: 'You have already cast your vote for this election.' 
             });
         }
         
-        // Generate a 6-digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        // In a real application, you might:
+        // 1. Check against a database of enrolled students
+        // 2. Verify the email is active in your college system
+        // 3. Log the authentication attempt for security
         
-        // Store OTP with 5-minute expiry
-        db.otps[phone] = {
-            code: otp,
-            expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
-        };
-        
-        // In a real application, send OTP via SMS
-        // For development, just log it
-        console.log(`OTP for ${phone}: ${otp}`);
-        
-        // Uncomment for production to send actual SMS
-        /*
-        await twilioClient.messages.create({
-            body: `Your OTP for College Hostel Secretary Election is: ${otp}. Valid for 5 minutes.`,
-            from: twilioPhoneNumber,
-            to: `+${phone}`
-        });
-        */
-        
-        res.json({ 
-            success: true, 
-            message: 'OTP sent successfully.' 
-        });
-    } catch (error) {
-        console.error('Error sending OTP:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Failed to send OTP. Please try again.' 
-        });
-    }
-});
-
-// Verify OTP
-app.post('/api/auth/verify-otp', (req, res) => {
-    try {
-        const { phone, otp } = req.body;
-        
-        if (!phone || !otp) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Phone number and OTP are required.' 
-            });
-        }
-        
-        const storedOTP = db.otps[phone];
-        
-        // Check if OTP exists and is valid
-        if (!storedOTP) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'OTP not found. Please request a new one.' 
-            });
-        }
-        
-        // Check if OTP has expired
-        if (storedOTP.expiresAt < Date.now()) {
-            delete db.otps[phone]; // Clean up expired OTP
-            return res.status(400).json({ 
-                success: false, 
-                message: 'OTP has expired. Please request a new one.' 
-            });
-        }
-        
-        // Check if OTP matches
-        if (storedOTP.code !== otp) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Invalid OTP. Please try again.' 
-            });
-        }
-        
-        // OTP is valid, generate a session token
+        // Generate a session token
         const sessionToken = crypto.randomBytes(32).toString('hex');
         
-        // Clean up used OTP
-        delete db.otps[phone];
-        
         res.json({ 
             success: true, 
-            message: 'OTP verified successfully.',
+            message: 'Authentication successful.',
             sessionToken
         });
     } catch (error) {
-        console.error('Error verifying OTP:', error);
+        console.error('Error authenticating email:', error);
         res.status(500).json({ 
             success: false, 
-            message: 'Failed to verify OTP. Please try again.' 
+            message: 'Failed to authenticate. Please try again.' 
         });
     }
 });
@@ -183,12 +115,20 @@ app.post('/api/auth/verify-otp', (req, res) => {
 // Cast a vote and record it on the blockchain
 app.post('/api/vote', async (req, res) => {
     try {
-        const { phone, candidate, sessionToken } = req.body;
+        const { email, candidate, sessionToken } = req.body;
         
-        if (!phone || !candidate || !sessionToken) {
+        if (!email || !candidate || !sessionToken) {
             return res.status(400).json({ 
                 success: false, 
-                message: 'Phone number, candidate, and session token are required.' 
+                message: 'Email, candidate, and session token are required.' 
+            });
+        }
+        
+        // Validate email
+        if (!validateCollegeEmail(email)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Invalid email format.' 
             });
         }
         
@@ -205,7 +145,7 @@ app.post('/api/vote', async (req, res) => {
         // For this demo, we'll skip detailed token validation
         
         // Check if user has already voted
-        if (db.votedUsers.has(phone)) {
+        if (db.votedUsers.has(email)) {
             return res.status(403).json({ 
                 success: false, 
                 message: 'You have already cast your vote for this election.' 
@@ -215,11 +155,6 @@ app.post('/api/vote', async (req, res) => {
         // Record the vote on the blockchain
         let transaction;
         try {
-            // In a real application, you would:
-            // 1. Create a transaction that calls your voting program
-            // 2. Include the candidate selection and voter ID (hashed for privacy)
-            // 3. Sign and send the transaction
-            
             // Create a simple transaction (placeholder)
             transaction = new Transaction();
             
@@ -233,21 +168,6 @@ app.post('/api/vote', async (req, res) => {
                 })
             );
             
-            // Add a memo with the vote data (in a real app, use a proper program instruction)
-            /*
-            transaction.add(
-                new TransactionInstruction({
-                    keys: [{ pubkey: adminKeypair.publicKey, isSigner: true, isWritable: true }],
-                    programId: VOTING_PROGRAM_ID,
-                    data: Buffer.from(JSON.stringify({
-                        action: 'vote',
-                        candidate,
-                        voterHash: crypto.createHash('sha256').update(phone).digest('hex')
-                    }))
-                })
-            );
-            */
-            
             // Sign and send the transaction
             transaction.recentBlockhash = (await solanaConnection.getRecentBlockhash()).blockhash;
             transaction.feePayer = adminKeypair.publicKey;
@@ -259,7 +179,7 @@ app.post('/api/vote', async (req, res) => {
             console.log(`Vote recorded on blockchain with signature: ${signature}`);
             
             // Mark the user as having voted
-            db.votedUsers.add(phone);
+            db.votedUsers.add(email);
             
             // Update vote count (for admin reporting)
             db.voteResults[candidate]++;
@@ -286,18 +206,18 @@ app.post('/api/vote', async (req, res) => {
 });
 
 // Check if a user has already voted
-app.get('/api/check-voted/:phone', (req, res) => {
+app.get('/api/check-voted/:email', (req, res) => {
     try {
-        const { phone } = req.params;
+        const { email } = req.params;
         
-        if (!phone) {
+        if (!email) {
             return res.status(400).json({ 
                 success: false, 
-                message: 'Phone number is required.' 
+                message: 'Email is required.' 
             });
         }
         
-        const hasVoted = db.votedUsers.has(phone);
+        const hasVoted = db.votedUsers.has(email);
         
         res.json({ 
             success: true, 
