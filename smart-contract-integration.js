@@ -61,19 +61,19 @@ class BlockchainService {
   
   /**
    * Record a vote on the blockchain
-   * @param {string} phone - The voter's phone number
+   * @param {string} email - The voter's college email
    * @param {string} candidate - The selected candidate's name
    * @returns {Promise<string>} - Transaction signature
    */
-  async recordVote(phone, candidate) {
+  async recordVote(email, candidate) {
     try {
       // Validate inputs
-      if (!phone || !candidate) {
-        throw new Error('Phone number and candidate are required');
+      if (!email || !candidate) {
+        throw new Error('Email and candidate are required');
       }
       
-      // Hash the phone number for privacy
-      const voterHash = crypto.createHash('sha256').update(phone).digest('hex');
+      // Hash the email for privacy
+      const voterHash = crypto.createHash('sha256').update(email).digest('hex');
       
       // Ensure election is initialized
       if (!this.electionAccount || !this.voterListAccount) {
@@ -148,6 +148,27 @@ class BlockchainService {
     } catch (error) {
       console.error('Failed to get election results:', error);
       throw new Error('Failed to get election results from blockchain');
+    }
+  }
+  
+  /**
+   * Verify if an email is eligible to vote
+   * @param {string} email - The voter's college email
+   * @returns {Promise<boolean>} - Whether the email is eligible
+   */
+  async isEligibleVoter(email) {
+    try {
+      // In a real application, you would:
+      // 1. Check if the email is in the list of eligible voters
+      // 2. Verify the email is a valid college email
+      
+      // For this demo, we'll just check if it's a college email format
+      const isCollegeEmail = email.endsWith('.edu') || email.includes('college');
+      
+      return isCollegeEmail;
+    } catch (error) {
+      console.error('Failed to check voter eligibility:', error);
+      throw new Error('Failed to verify voter eligibility');
     }
   }
 }
