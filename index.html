@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Hostel Secretary Election</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.7.4/web3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/solana-web3.js/1.73.0/index.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-md">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-blue-800">College Hostel Secretary Election</h1>
+            <p class="text-gray-600 mt-2">Cast your vote securely using blockchain technology</p>
+        </header>
+
+        <!-- Authentication Section -->
+        <div id="auth-section" class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Voter Authentication</h2>
+            <div id="phone-form">
+                <label for="phone" class="block text-gray-700 mb-2">Enter your mobile number:</label>
+                <div class="flex">
+                    <input type="tel" id="phone" class="flex-1 px-4 py-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="10-digit mobile number">
+                    <button id="send-otp-btn" class="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        Send OTP
+                    </button>
+                </div>
+                <p id="phone-error" class="text-red-500 text-sm mt-1 hidden">Please enter a valid 10-digit mobile number.</p>
+            </div>
+            
+            <div id="otp-form" class="mt-6 hidden">
+                <label for="otp" class="block text-gray-700 mb-2">Enter the OTP sent to your mobile:</label>
+                <div class="flex">
+                    <input type="text" id="otp" class="flex-1 px-4 py-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="6-digit OTP">
+                    <button id="verify-otp-btn" class="bg-green-600 text-white px-4 py-2 rounded-r-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                        Verify
+                    </button>
+                </div>
+                <p id="otp-error" class="text-red-500 text-sm mt-1 hidden">Invalid OTP. Please try again.</p>
+                <p id="otp-resend" class="text-blue-600 text-sm mt-3 cursor-pointer">Didn't receive OTP? Resend</p>
+            </div>
+        </div>
+
+        <!-- Voting Section (Hidden initially) -->
+        <div id="voting-section" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
+            <h2 class="text-xl font-semibold mb-4">Cast Your Vote</h2>
+            <p class="text-gray-600 mb-4">Select one candidate from the list below:</p>
+            
+            <div class="space-y-3 mb-6">
+                <div class="candidate-option">
+                    <input type="radio" id="candidate-1" name="candidate" value="Alice" class="mr-2">
+                    <label for="candidate-1" class="text-gray-800">Alice</label>
+                </div>
+                <div class="candidate-option">
+                    <input type="radio" id="candidate-2" name="candidate" value="Bob" class="mr-2">
+                    <label for="candidate-2" class="text-gray-800">Bob</label>
+                </div>
+                <div class="candidate-option">
+                    <input type="radio" id="candidate-3" name="candidate" value="Charlie" class="mr-2">
+                    <label for="candidate-3" class="text-gray-800">Charlie</label>
+                </div>
+                <div class="candidate-option">
+                    <input type="radio" id="candidate-4" name="candidate" value="David" class="mr-2">
+                    <label for="candidate-4" class="text-gray-800">David</label>
+                </div>
+                <div class="candidate-option">
+                    <input type="radio" id="candidate-5" name="candidate" value="Eve" class="mr-2">
+                    <label for="candidate-5" class="text-gray-800">Eve</label>
+                </div>
+            </div>
+            
+            <button id="cast-vote-btn" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                Cast My Vote
+            </button>
+        </div>
+
+        <!-- Success Section (Hidden initially) -->
+        <div id="success-section" class="bg-white rounded-lg shadow-md p-6 text-center hidden">
+            <svg class="w-16 h-16 mx-auto text-green-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Vote Cast Successfully!</h2>
+            <p class="text-gray-600 mb-4">Your vote has been securely recorded on the blockchain.</p>
+            <div class="mt-4">
+                <p class="text-sm text-gray-500">Transaction ID:</p>
+                <p id="transaction-id" class="text-xs text-blue-600 break-all"></p>
+            </div>
+        </div>
+
+        <!-- Error Section (Hidden initially) -->
+        <div id="error-section" class="bg-white rounded-lg shadow-md p-6 text-center hidden">
+            <svg class="w-16 h-16 mx-auto text-red-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Error Occurred</h2>
+            <p id="error-message" class="text-gray-600 mb-4">Something went wrong. Please try again.</p>
+            <button id="try-again-btn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                Try Again
+            </button>
+        </div>
+
+        <footer class="text-center text-gray-500 text-sm mt-8">
+            © 2025 College Hostel Election Committee. All rights reserved.
+        </footer>
+    </div>
+
+    <script>
+        // DOM elements
+        const authSection = document.getElementById('auth-section');
+        const phoneForm = document.getElementById('phone-form');
+        const otpForm = document.getElementById('otp-form');
+        const votingSection = document.getElementById('voting-section');
+        const successSection = document.getElementById('success-section');
+        const errorSection = document.getElementById('error-section');
+        
+        const phoneInput = document.getElementById('phone');
+        const otpInput = document.getElementById('otp');
+        const sendOtpBtn = document.getElementById('send-otp-btn');
+        const verifyOtpBtn = document.getElementById('verify-otp-btn');
+        const castVoteBtn = document.getElementById('cast-vote-btn');
+        const tryAgainBtn = document.getElementById('try-again-btn');
+        const otpResend = document.getElementById('otp-resend');
+        
+        const phoneError = document.getElementById('phone-error');
+        const otpError = document.getElementById('otp-error');
+        const errorMessage = document.getElementById('error-message');
+        const transactionId = document.getElementById('transaction-id');
+
+        // Global variables
+        let currentUser = null;
+        let votingContract = null;
+        let solanaConnection = null;
+        let walletKeyPair = null;
+
+        // Initialize Solana connection
+        async function initializeSolana() {
+            try {
+                // For demo purposes, we're using a local connection
+                // In production, you would connect to mainnet or testnet
+                solanaConnection = new solanaWeb3.Connection(
+                    solanaWeb3.clusterApiUrl('devnet'),
+                    'confirmed'
+                );
+                
+                // Generate a temporary keypair for the demo
+                // In a real app, you would use the user's wallet
+                walletKeyPair = solanaWeb3.Keypair.generate();
+                
+                console.log("Solana connection established");
+                return true;
+            } catch (error) {
+                console.error("Failed to initialize Solana connection:", error);
+                showError("Failed to initialize blockchain connection. Please try again.");
+                return false;
+            }
+        }
+
+        // Validate phone number (simple validation for demo)
+        function validatePhone(phone) {
+            return /^\d{10}$/.test(phone);
+        }
+
+        // Send OTP to the provided phone number
+        async function sendOTP() {
+            const phone = phoneInput.value.trim();
+            
+            if (!validatePhone(phone)) {
+                phoneError.classList.remove('hidden');
+                return;
+            }
+            
+            phoneError.classList.add('hidden');
+            sendOtpBtn.disabled = true;
+            sendOtpBtn.textContent = 'Sending...';
+            
+            try {
+                // In a real app, you would send an API request to your backend
+                // For demo purposes, we'll simulate an API call with a timeout
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // For demo purposes, we'll use a fixed OTP
+                // In production, this would be generated on the server and sent via SMS
+                currentUser = {
+                    phone: phone,
+                    otp: "123456",
+                    hasVoted: false,
+                };
+                
+                console.log("OTP sent successfully to:", phone);
+                
+                // Show OTP input form
+                phoneForm.classList.add('hidden');
+                otpForm.classList.remove('hidden');
+            } catch (error) {
+                console.error("Failed to send OTP:", error);
+                showError("Failed to send OTP. Please try again.");
+            } finally {
+                sendOtpBtn.disabled = false;
+                sendOtpBtn.textContent = 'Send OTP';
+            }
+        }
+
+        // Verify the entered OTP
+        async function verifyOTP() {
+            const otp = otpInput.value.trim();
+            
+            if (!otp || otp.length !== 6) {
+                otpError.classList.remove('hidden');
+                return;
+            }
+            
+            verifyOtpBtn.disabled = true;
+            verifyOtpBtn.textContent = 'Verifying...';
+            
+            try {
+                // For demo purposes, we'll check against the fixed OTP
+                // In production, this would be validated on the server
+                if (otp === currentUser.otp) {
+                    // Check if user has already voted
+                    const hasVoted = await checkIfVoted(currentUser.phone);
+                    
+                    if (hasVoted) {
+                        showError("You have already cast your vote for this election.");
+                        return;
+                    }
+                    
+                    console.log("OTP verified successfully");
+                    
+                    // Initialize blockchain connection
+                    if (await initializeSolana()) {
+                        // Show voting section
+                        authSection.classList.add('hidden');
+                        votingSection.classList.remove('hidden');
+                    }
+                } else {
+                    otpError.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error("Failed to verify OTP:", error);
+                showError("Failed to verify OTP. Please try again.");
+            } finally {
+                verifyOtpBtn.disabled = false;
+                verifyOtpBtn.textContent = 'Verify';
+            }
+        }
+
+        // Check if the user has already voted
+        async function checkIfVoted(phone) {
+            try {
+                // In a real app, you would check against your database or blockchain
+                // For demo purposes, we'll simulate an API call
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // For demo, we'll assume the user hasn't voted
+                return false;
+            } catch (error) {
+                console.error("Failed to check voting status:", error);
+                throw error;
+            }
+        }
+
+        // Cast vote function
+        async function castVote() {
+            // Get selected candidate
+            const selectedCandidate = document.querySelector('input[name="candidate"]:checked');
+            
+            if (!selectedCandidate) {
+                showError("Please select a candidate to cast your vote.");
+                return;
+            }
+            
+            castVoteBtn.disabled = true;
+            castVoteBtn.textContent = 'Submitting Vote...';
+            
+            try {
+                const candidateName = selectedCandidate.value;
+                
+                // Create a Solana transaction
+                const transaction = await createVoteTransaction(candidateName);
+                
+                // For demo purposes, we'll simulate a successful transaction
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Generate a fake transaction ID
+                const fakeTransactionId = "5KSm2sHAzAiVpJWWjJZ8UCx4McK6c3MQxtSHsyK9nYBvnNKkYzZCiFYuXFyuD1Z5zGTJQxbKL7LGKzKVCjnnY7dP";
+                
+                console.log("Vote cast successfully for:", candidateName);
+                
+                // Mark user as voted
+                currentUser.hasVoted = true;
+                
+                // Show success section
+                votingSection.classList.add('hidden');
+                successSection.classList.remove('hidden');
+                transactionId.textContent = fakeTransactionId;
+            } catch (error) {
+                console.error("Failed to cast vote:", error);
+                showError("Failed to record your vote on the blockchain. Please try again.");
+            } finally {
+                castVoteBtn.disabled = false;
+                castVoteBtn.textContent = 'Cast My Vote';
+            }
+        }
+
+        // Create a Solana transaction for voting
+        async function createVoteTransaction(candidateName) {
+            try {
+                // In a real app, you would create and sign a real Solana transaction
+                // For demo purposes, we'll just log what would happen
+                console.log(`Creating transaction to vote for ${candidateName}`);
+                
+                // This is a simplified example. In a real app:
+                // 1. You'd have a program deployed on Solana
+                // 2. You'd create a transaction that calls your program
+                // 3. You'd sign the transaction with the user's wallet
+                // 4. You'd send the transaction to the network
+                
+                return {
+                    candidate: candidateName,
+                    voter: currentUser.phone,
+                    timestamp: new Date().toISOString()
+                };
+            } catch (error) {
+                console.error("Failed to create transaction:", error);
+                throw error;
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            errorMessage.textContent = message;
+            authSection.classList.add('hidden');
+            votingSection.classList.add('hidden');
+            successSection.classList.add('hidden');
+            errorSection.classList.remove('hidden');
+        }
+
+        // Try again button handler
+        function tryAgain() {
+            errorSection.classList.add('hidden');
+            authSection.classList.remove('hidden');
+            phoneForm.classList.remove('hidden');
+            otpForm.classList.add('hidden');
+            phoneInput.value = '';
+            otpInput.value = '';
+            currentUser = null;
+        }
+
+        // Event listeners
+        sendOtpBtn.addEventListener('click', sendOTP);
+        verifyOtpBtn.addEventListener('click', verifyOTP);
+        castVoteBtn.addEventListener('click', castVote);
+        tryAgainBtn.addEventListener('click', tryAgain);
+        otpResend.addEventListener('click', sendOTP);
+
+        // Initialize the UI
+        function init() {
+            // Load all necessary scripts and initialize connections
+            console.log("Application initialized");
+        }
+
+        // Initialize the app
+        init();
+    </script>
+</body>
+</html>
