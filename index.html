@@ -18,27 +18,15 @@
         <!-- Authentication Section -->
         <div id="auth-section" class="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 class="text-xl font-semibold mb-4">Voter Authentication</h2>
-            <div id="phone-form">
-                <label for="phone" class="block text-gray-700 mb-2">Enter your mobile number:</label>
+            <div id="email-form">
+                <label for="email" class="block text-gray-700 mb-2">Enter your college email:</label>
                 <div class="flex">
-                    <input type="tel" id="phone" class="flex-1 px-4 py-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="10-digit mobile number">
-                    <button id="send-otp-btn" class="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        Send OTP
-                    </button>
+                    <input type="email" id="email" class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="yourname@college.edu">
                 </div>
-                <p id="phone-error" class="text-red-500 text-sm mt-1 hidden">Please enter a valid 10-digit mobile number.</p>
-            </div>
-            
-            <div id="otp-form" class="mt-6 hidden">
-                <label for="otp" class="block text-gray-700 mb-2">Enter the OTP sent to your mobile:</label>
-                <div class="flex">
-                    <input type="text" id="otp" class="flex-1 px-4 py-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="6-digit OTP">
-                    <button id="verify-otp-btn" class="bg-green-600 text-white px-4 py-2 rounded-r-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
-                        Verify
-                    </button>
-                </div>
-                <p id="otp-error" class="text-red-500 text-sm mt-1 hidden">Invalid OTP. Please try again.</p>
-                <p id="otp-resend" class="text-blue-600 text-sm mt-3 cursor-pointer">Didn't receive OTP? Resend</p>
+                <p id="email-error" class="text-red-500 text-sm mt-1 hidden">Please enter a valid college email address.</p>
+                <button id="auth-btn" class="mt-4 w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    Authenticate
+                </button>
             </div>
         </div>
 
@@ -108,28 +96,22 @@
     <script>
         // DOM elements
         const authSection = document.getElementById('auth-section');
-        const phoneForm = document.getElementById('phone-form');
-        const otpForm = document.getElementById('otp-form');
+        const emailForm = document.getElementById('email-form');
         const votingSection = document.getElementById('voting-section');
         const successSection = document.getElementById('success-section');
         const errorSection = document.getElementById('error-section');
         
-        const phoneInput = document.getElementById('phone');
-        const otpInput = document.getElementById('otp');
-        const sendOtpBtn = document.getElementById('send-otp-btn');
-        const verifyOtpBtn = document.getElementById('verify-otp-btn');
+        const emailInput = document.getElementById('email');
+        const authBtn = document.getElementById('auth-btn');
         const castVoteBtn = document.getElementById('cast-vote-btn');
         const tryAgainBtn = document.getElementById('try-again-btn');
-        const otpResend = document.getElementById('otp-resend');
         
-        const phoneError = document.getElementById('phone-error');
-        const otpError = document.getElementById('otp-error');
+        const emailError = document.getElementById('email-error');
         const errorMessage = document.getElementById('error-message');
         const transactionId = document.getElementById('transaction-id');
 
         // Global variables
         let currentUser = null;
-        let votingContract = null;
         let solanaConnection = null;
         let walletKeyPair = null;
 
@@ -156,97 +138,68 @@
             }
         }
 
-        // Validate phone number (simple validation for demo)
-        function validatePhone(phone) {
-            return /^\d{10}$/.test(phone);
+        // Validate email (simple validation for demo)
+        function validateEmail(email) {
+            // Check if it looks like an email
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                return false;
+            }
+            
+            // Check if it's a college email (ends with .edu or your specific college domain)
+            return email.endsWith('.edu') || email.includes('college');
         }
 
-        // Send OTP to the provided phone number
-        async function sendOTP() {
-            const phone = phoneInput.value.trim();
+        // Authenticate with college email
+        async function authenticateEmail() {
+            const email = emailInput.value.trim();
             
-            if (!validatePhone(phone)) {
-                phoneError.classList.remove('hidden');
+            if (!validateEmail(email)) {
+                emailError.classList.remove('hidden');
                 return;
             }
             
-            phoneError.classList.add('hidden');
-            sendOtpBtn.disabled = true;
-            sendOtpBtn.textContent = 'Sending...';
+            emailError.classList.add('hidden');
+            authBtn.disabled = true;
+            authBtn.textContent = 'Authenticating...';
             
             try {
-                // In a real app, you would send an API request to your backend
+                // In a real app, you would send an API request to validate the email
                 // For demo purposes, we'll simulate an API call with a timeout
                 await new Promise(resolve => setTimeout(resolve, 1500));
                 
-                // For demo purposes, we'll use a fixed OTP
-                // In production, this would be generated on the server and sent via SMS
+                // Check if user has already voted
+                const hasVoted = await checkIfVoted(email);
+                
+                if (hasVoted) {
+                    showError("You have already cast your vote for this election.");
+                    return;
+                }
+                
+                // Set current user
                 currentUser = {
-                    phone: phone,
-                    otp: "123456",
-                    hasVoted: false,
+                    email: email,
+                    hasVoted: false
                 };
                 
-                console.log("OTP sent successfully to:", phone);
+                console.log("Email authenticated successfully:", email);
                 
-                // Show OTP input form
-                phoneForm.classList.add('hidden');
-                otpForm.classList.remove('hidden');
-            } catch (error) {
-                console.error("Failed to send OTP:", error);
-                showError("Failed to send OTP. Please try again.");
-            } finally {
-                sendOtpBtn.disabled = false;
-                sendOtpBtn.textContent = 'Send OTP';
-            }
-        }
-
-        // Verify the entered OTP
-        async function verifyOTP() {
-            const otp = otpInput.value.trim();
-            
-            if (!otp || otp.length !== 6) {
-                otpError.classList.remove('hidden');
-                return;
-            }
-            
-            verifyOtpBtn.disabled = true;
-            verifyOtpBtn.textContent = 'Verifying...';
-            
-            try {
-                // For demo purposes, we'll check against the fixed OTP
-                // In production, this would be validated on the server
-                if (otp === currentUser.otp) {
-                    // Check if user has already voted
-                    const hasVoted = await checkIfVoted(currentUser.phone);
-                    
-                    if (hasVoted) {
-                        showError("You have already cast your vote for this election.");
-                        return;
-                    }
-                    
-                    console.log("OTP verified successfully");
-                    
-                    // Initialize blockchain connection
-                    if (await initializeSolana()) {
-                        // Show voting section
-                        authSection.classList.add('hidden');
-                        votingSection.classList.remove('hidden');
-                    }
-                } else {
-                    otpError.classList.remove('hidden');
+                // Initialize blockchain connection
+                if (await initializeSolana()) {
+                    // Show voting section
+                    authSection.classList.add('hidden');
+                    votingSection.classList.remove('hidden');
                 }
             } catch (error) {
-                console.error("Failed to verify OTP:", error);
-                showError("Failed to verify OTP. Please try again.");
+                console.error("Failed to authenticate email:", error);
+                showError("Failed to authenticate email. Please try again.");
             } finally {
-                verifyOtpBtn.disabled = false;
-                verifyOtpBtn.textContent = 'Verify';
+                authBtn.disabled = false;
+                authBtn.textContent = 'Authenticate';
             }
         }
 
         // Check if the user has already voted
-        async function checkIfVoted(phone) {
+        async function checkIfVoted(email) {
             try {
                 // In a real app, you would check against your database or blockchain
                 // For demo purposes, we'll simulate an API call
@@ -318,7 +271,7 @@
                 
                 return {
                     candidate: candidateName,
-                    voter: currentUser.phone,
+                    voter: currentUser.email,
                     timestamp: new Date().toISOString()
                 };
             } catch (error) {
@@ -340,19 +293,14 @@
         function tryAgain() {
             errorSection.classList.add('hidden');
             authSection.classList.remove('hidden');
-            phoneForm.classList.remove('hidden');
-            otpForm.classList.add('hidden');
-            phoneInput.value = '';
-            otpInput.value = '';
+            emailInput.value = '';
             currentUser = null;
         }
 
         // Event listeners
-        sendOtpBtn.addEventListener('click', sendOTP);
-        verifyOtpBtn.addEventListener('click', verifyOTP);
+        authBtn.addEventListener('click', authenticateEmail);
         castVoteBtn.addEventListener('click', castVote);
         tryAgainBtn.addEventListener('click', tryAgain);
-        otpResend.addEventListener('click', sendOTP);
 
         // Initialize the UI
         function init() {
