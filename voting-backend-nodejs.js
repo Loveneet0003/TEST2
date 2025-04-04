@@ -40,6 +40,30 @@ wss.on('connection', (ws) => {
         data: db.voteResults
     }));
     
+    ws.on('message', (message) => {
+        try {
+            const data = JSON.parse(message);
+            
+            if (data.type === 'vote') {
+                // Update vote count
+                if (db.voteResults.hasOwnProperty(data.candidate)) {
+                    db.voteResults[data.candidate]++;
+                    
+                    // Broadcast update to all clients
+                    broadcastVoteUpdate();
+                }
+            } else if (data.type === 'getVoteCounts') {
+                // Send current vote counts to the requesting client
+                ws.send(JSON.stringify({
+                    type: 'voteUpdate',
+                    data: db.voteResults
+                }));
+            }
+        } catch (error) {
+            console.error('Error processing WebSocket message:', error);
+        }
+    });
+    
     ws.on('close', () => {
         clients.delete(ws);
     });

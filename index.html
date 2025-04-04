@@ -7,100 +7,174 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.7.4/web3.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/solana-web3.js/1.73.0/index.min.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(45deg, #2563eb, #3b82f6, #60a5fa, #93c5fd, #f97316);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+        }
+        .candidate-card {
+            transition: transform 0.2s;
+        }
+        .candidate-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8 max-w-md">
-        <header class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-blue-800">College Hostel Secretary Election</h1>
-            <p class="text-gray-600 mt-2">Cast your vote securely using blockchain technology</p>
-        </header>
-
-        <!-- Live Vote Counter Section -->
-        <div id="vote-counter-section" class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-xl font-semibold mb-4">Live Vote Count</h2>
-            <div id="vote-counts" class="space-y-3">
-                <!-- Vote counts will be dynamically inserted here -->
+<body class="gradient-bg min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white bg-opacity-90 shadow-md">
+        <div class="container mx-auto px-6 py-3">
+            <div class="flex justify-center space-x-12">
+                <a href="#" class="text-blue-900 font-semibold hover:text-blue-600">Home</a>
+                <a href="#candidates" class="text-blue-900 font-semibold hover:text-blue-600">Candidates</a>
+                <a href="#contact" class="text-blue-900 font-semibold hover:text-blue-600">Contact</a>
             </div>
         </div>
+    </nav>
 
-        <!-- Authentication Section -->
-        <div id="auth-section" class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-xl font-semibold mb-4">Voter Authentication</h2>
-            <div id="email-form">
-                <label for="email" class="block text-gray-700 mb-2">Enter your college email:</label>
-                <div class="flex">
-                    <input type="email" id="email" class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="yourname@college.edu">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Main Content -->
+        <div class="max-w-4xl mx-auto">
+            <!-- Hero Section -->
+            <div class="card p-8 mb-8">
+                <div class="flex flex-col md:flex-row items-center justify-between">
+                    <div class="md:w-1/2 mb-6 md:mb-0">
+                        <h1 class="text-4xl font-bold text-blue-900 mb-4">Hostel Secretary Election</h1>
+                        <p class="text-red-500 text-xl mb-6">Participate in the election for hostel secretary</p>
+                        <p class="text-blue-900 mb-6">Make your voice heard in the hostel secretary election.</p>
+                        <button id="vote-now-btn" class="bg-red-500 text-white px-8 py-3 rounded-full text-lg font-semibold hover:bg-red-600 transition-colors">
+                            Vote Now
+                        </button>
+                    </div>
+                    <div class="md:w-1/2">
+                        <svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full">
+                            <!-- Background shapes -->
+                            <circle cx="200" cy="200" r="150" fill="#E8F0FE" />
+                            <circle cx="200" cy="200" r="120" fill="#C7D9F9" />
+                            
+                            <!-- Ballot box -->
+                            <rect x="150" y="180" width="100" height="120" rx="10" fill="#2563EB" />
+                            <rect x="140" y="170" width="120" height="20" rx="5" fill="#1E40AF" />
+                            <rect x="180" y="140" width="40" height="40" rx="5" fill="#1E40AF" />
+                            
+                            <!-- Checkmark -->
+                            <path d="M190 220 L210 240 L250 200" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+                            
+                            <!-- Person silhouette -->
+                            <circle cx="320" cy="160" r="30" fill="#FB923C" />
+                            <path d="M290 220 Q320 180 350 220 L350 280 L290 280 Z" fill="#FB923C" />
+                        </svg>
+                    </div>
                 </div>
-                <p id="email-error" class="text-red-500 text-sm mt-1 hidden">Please enter a valid college email address.</p>
-                <button id="auth-btn" class="mt-4 w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    Authenticate
+            </div>
+
+            <!-- Live Vote Counter Section -->
+            <div id="vote-counter-section" class="card p-8 mb-8">
+                <h2 class="text-2xl font-semibold text-blue-900 mb-6">Live Vote Count</h2>
+                <div id="vote-counts" class="space-y-4">
+                    <!-- Vote counts will be dynamically inserted here -->
+                </div>
+            </div>
+
+            <!-- Voting Section -->
+            <div id="voting-section" class="card p-8 mb-8 hidden">
+                <h2 class="text-2xl font-semibold text-blue-900 mb-6">Cast Your Vote</h2>
+                <div class="space-y-4">
+                    <div class="candidate-option p-4 border rounded-lg hover:bg-blue-50 transition-colors">
+                        <input type="radio" id="candidate-1" name="candidate" value="ANKIT" class="mr-3">
+                        <label for="candidate-1" class="text-gray-800 text-lg">ANKIT</label>
+                    </div>
+                    <div class="candidate-option p-4 border rounded-lg hover:bg-blue-50 transition-colors">
+                        <input type="radio" id="candidate-2" name="candidate" value="RUDRA PRATAP SINGH" class="mr-3">
+                        <label for="candidate-2" class="text-gray-800 text-lg">RUDRA PRATAP SINGH</label>
+                    </div>
+                    <div class="candidate-option p-4 border rounded-lg hover:bg-blue-50 transition-colors">
+                        <input type="radio" id="candidate-3" name="candidate" value="ARVIND MEENA" class="mr-3">
+                        <label for="candidate-3" class="text-gray-800 text-lg">ARVIND MEENA</label>
+                    </div>
+                </div>
+                <button id="cast-vote-btn" class="mt-8 w-full bg-blue-600 text-white py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors">
+                    Cast My Vote
                 </button>
             </div>
-        </div>
-        <div class="container mx-auto px-4 py-8 flex flex-col md:flex-row justify-between max-w-6xl">
 
-        <!-- Voting Section (Hidden initially) -->
-        <div id="voting-section" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
-            <h2 class="text-xl font-semibold mb-4">Cast Your Vote</h2>
-            <p class="text-gray-600 mb-4">Select one candidate from the list below:</p>
-            
-            <div class="space-y-3 mb-6">
-                <div class="candidate-option">
-                    <input type="radio" id="candidate-1" name="candidate" value="ANKIT" class="mr-2">
-                    <label for="candidate-1" class="text-gray-800">ANKIT</label>
+            <!-- Candidate Cards -->
+            <div id="candidates" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="candidate-card bg-yellow-100 p-6 rounded-xl shadow-lg">
+                    <h3 class="text-2xl font-bold text-blue-900 mb-2">ANKIT</h3>
                 </div>
-                <div class="candidate-option">
-                    <input type="radio" id="candidate-2" name="candidate" value="RUDRA PRATAP SINGH" class="mr-2">
-                    <label for="candidate-2" class="text-gray-800">RUDRA PRATAP SINGH</label>
+                <div class="candidate-card bg-blue-100 p-6 rounded-xl shadow-lg">
+                    <h3 class="text-2xl font-bold text-blue-900 mb-2">RUDRA PRATAP SINGH</h3>
                 </div>
-                <div class="candidate-option">
-                    <input type="radio" id="candidate-3" name="candidate" value="ARVIND MEENA" class="mr-2">
-                    <label for="candidate-3" class="text-gray-800">ARVIND MEENA</label>
-                </div>
-                <div class="candidate-option">
-                    <input type="radio" id="candidate-4" name="candidate" value="IVAN SHARMA" class="mr-2">
-                    <label for="candidate-4" class="text-gray-800">IVAN SHARMA</label>
-                </div>
-                <div class="candidate-option">
-                    <input type="radio" id="candidate-5" name="candidate" value="LOVENEET CHAUHAN" class="mr-2">
-                    <label for="candidate-5" class="text-gray-800">LOVENEET CHAUHAN</label>
+                <div class="candidate-card bg-green-100 p-6 rounded-xl shadow-lg">
+                    <h3 class="text-2xl font-bold text-blue-900 mb-2">ARVIND MEENA</h3>
                 </div>
             </div>
-            
-            <button id="cast-vote-btn" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed">
-                Cast My Vote
+        </div>
+    </div>
+
+    <!-- Authentication Section -->
+    <div id="auth-section" class="card p-8 mb-8 hidden">
+        <h2 class="text-2xl font-semibold text-blue-900 mb-6">Voter Authentication</h2>
+        <div id="email-form" class="space-y-4">
+            <div>
+                <label for="email" class="block text-gray-700 text-lg mb-2">Enter your college email:</label>
+                <input type="email" 
+                       id="email" 
+                       class="w-full px-4 py-3 border-2 border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                       placeholder="yourname@college.edu">
+                <p id="email-error" class="text-red-500 text-sm mt-2 hidden">Please enter a valid college email address.</p>
+            </div>
+            <button id="auth-btn" 
+                    class="w-full bg-blue-600 text-white py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                Authenticate
             </button>
         </div>
+    </div>
 
-        <!-- Success Section (Hidden initially) -->
-        <div id="success-section" class="bg-white rounded-lg shadow-md p-6 text-center hidden">
-            <svg class="w-16 h-16 mx-auto text-green-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <!-- Success Section -->
+    <div id="success-section" class="card p-8 text-center hidden">
+        <div class="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
+            <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
             </svg>
-            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Vote Cast Successfully!</h2>
-            <p class="text-gray-600 mb-4">Your vote has been securely recorded on the blockchain.</p>
-            <div class="mt-4">
-                <p class="text-sm text-gray-500">Transaction ID:</p>
-                <p id="transaction-id" class="text-xs text-blue-600 break-all"></p>
-            </div>
         </div>
+        <h2 class="text-2xl font-semibold text-gray-800 mb-2">Vote Cast Successfully!</h2>
+        <p class="text-gray-600 mb-4">Your vote has been securely recorded on the blockchain.</p>
+        <div class="mt-4 bg-blue-50 p-4 rounded-lg">
+            <p class="text-sm text-gray-500 mb-1">Transaction ID:</p>
+            <p id="transaction-id" class="text-xs text-blue-600 break-all font-mono"></p>
+        </div>
+    </div>
 
-        <!-- Error Section (Hidden initially) -->
-        <div id="error-section" class="bg-white rounded-lg shadow-md p-6 text-center hidden">
-            <svg class="w-16 h-16 mx-auto text-red-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <!-- Error Section -->
+    <div id="error-section" class="card p-8 text-center hidden">
+        <div class="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
+            <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
-            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Error Occurred</h2>
-            <p id="error-message" class="text-gray-600 mb-4">Something went wrong. Please try again.</p>
-            <button id="try-again-btn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                Try Again
-            </button>
         </div>
-
-        <footer class="text-center text-gray-500 text-sm mt-8">
-            © 2025 College Hostel Election Committee. All rights reserved.
-        </footer>
+        <h2 class="text-2xl font-semibold text-gray-800 mb-2">Error Occurred</h2>
+        <p id="error-message" class="text-gray-600 mb-6">Something went wrong. Please try again.</p>
+        <button id="try-again-btn" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+            Try Again
+        </button>
     </div>
+
+    <footer class="text-center text-gray-500 text-sm mt-8">
+        © 2025 College Hostel Election Committee. All rights reserved.
+    </footer>
 
     <script>
         // DOM elements
@@ -292,10 +366,25 @@
                 // Mark user as voted
                 currentUser.hasVoted = true;
                 
+                // Update local vote count immediately for better UX
+                const currentVotes = document.querySelector(`#vote-counts [data-candidate="${candidateName}"] .vote-count`);
+                if (currentVotes) {
+                    const newCount = parseInt(currentVotes.textContent) + 1;
+                    currentVotes.textContent = newCount;
+                }
+                
                 // Show success section
                 votingSection.classList.add('hidden');
                 successSection.classList.remove('hidden');
                 transactionId.textContent = fakeTransactionId;
+
+                // Send vote update through WebSocket if connected
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        type: 'vote',
+                        candidate: candidateName
+                    }));
+                }
             } catch (error) {
                 console.error("Failed to cast vote:", error);
                 showError("Failed to record your vote on the blockchain. Please try again.");
@@ -353,28 +442,40 @@
 
         // Initialize WebSocket connection
         function initializeWebSocket() {
-            ws = new WebSocket('ws://localhost:3001');
-            
-            ws.onopen = () => {
-                console.log('WebSocket connection established');
-            };
-            
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                if (data.type === 'voteUpdate') {
-                    updateVoteCounts(data.data);
-                }
-            };
-            
-            ws.onclose = () => {
-                console.log('WebSocket connection closed');
-                // Attempt to reconnect after 5 seconds
-                setTimeout(initializeWebSocket, 5000);
-            };
-            
-            ws.onerror = (error) => {
-                console.error('WebSocket error:', error);
-            };
+            try {
+                ws = new WebSocket('ws://localhost:3001');
+                
+                ws.onopen = () => {
+                    console.log('WebSocket connection established');
+                    // Request initial vote counts when connection is established
+                    ws.send(JSON.stringify({ type: 'getVoteCounts' }));
+                };
+                
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        if (data.type === 'voteUpdate') {
+                            updateVoteCounts(data.data);
+                        }
+                    } catch (error) {
+                        console.error('Error processing WebSocket message:', error);
+                    }
+                };
+                
+                ws.onclose = () => {
+                    console.log('WebSocket connection closed');
+                    // Attempt to reconnect after 5 seconds
+                    setTimeout(initializeWebSocket, 5000);
+                };
+                
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                };
+            } catch (error) {
+                console.error('Failed to initialize WebSocket:', error);
+                // Fallback to polling if WebSocket fails
+                setInterval(fetchInitialVoteCounts, 5000);
+            }
         }
 
         // Update vote counts display
@@ -384,14 +485,14 @@
             
             Object.entries(voteData).forEach(([candidate, count]) => {
                 const candidateDiv = document.createElement('div');
-                candidateDiv.className = 'flex justify-between items-center p-2 bg-gray-50 rounded';
+                candidateDiv.className = 'flex justify-between items-center p-4 bg-white rounded-lg shadow-sm border border-gray-100 hover:border-blue-200 transition-colors';
                 
                 const nameSpan = document.createElement('span');
-                nameSpan.className = 'font-medium text-gray-700';
+                nameSpan.className = 'font-semibold text-gray-800 text-lg';
                 nameSpan.textContent = candidate;
                 
                 const countSpan = document.createElement('span');
-                countSpan.className = 'bg-blue-100 text-blue-800 px-3 py-1 rounded-full';
+                countSpan.className = 'bg-blue-100 text-blue-800 px-4 py-2 rounded-full font-semibold text-lg';
                 countSpan.textContent = count;
                 
                 candidateDiv.appendChild(nameSpan);
@@ -418,6 +519,11 @@
             await initializeSolana();
             initializeWebSocket();
             fetchInitialVoteCounts();
+        });
+
+        // Add new event listener for the Vote Now button
+        document.getElementById('vote-now-btn').addEventListener('click', () => {
+            document.getElementById('auth-section').classList.remove('hidden');
         });
     </script>
 </body>
